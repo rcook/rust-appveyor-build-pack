@@ -1,0 +1,20 @@
+build: false
+
+build_script:
+  - ps: .\New-RustAppVeyorBuildPack.ps1
+
+artifacts:
+  - name: bootstrap
+    path: rust-appveyor-build-pack.ps1
+  - name: zip
+    path: rust-appveyor-build-pack.zip
+
+deploy:
+  description: Official release from AppVeyor
+  artifact: bootstrap,zip
+  auth_token:
+    secure: KnsNe82iVYE0/gNPx55EdNiJ3q5rM9GKu+y8E/Fz5tCnybP3NZj0PEbLabX9wZzY
+  provider: GitHub
+  on:
+    branch: /v.+/
+    APPVEYOR_REPO_TAG: true
