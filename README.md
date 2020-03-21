@@ -1,6 +1,7 @@
 # rust-appveyor-build-pack
 
-[![AppVeyor build status](https://ci.appveyor.com/api/projects/status/w2nmlj9ljfkp10kh/branch/master?svg=true)][appveyor-master]
+[![AppVeyor status for project](https://ci.appveyor.com/api/projects/status/w2nmlj9ljfkp10kh?svg=true)][status-project]
+[![AppVeyor status for master branch](https://ci.appveyor.com/api/projects/status/w2nmlj9ljfkp10kh/branch/master?svg=true)][status-master]
 
 _Build and test Rust-based projects in AppVeyor and publish artifacts to GitHub_
 
@@ -48,7 +49,6 @@ install:
 * [MIT License][licence]
 
 [appveyor]: https://appveyor.com/
-[appveyor-master]: https://ci.appveyor.com/project/rcook/rust-appveyor-build-pack/branch/master
 [appveyor-yml]: https://www.appveyor.com/docs/appveyor-yml/
 [appveyor-yml-example]: appveyor.yml.example
 [background]: BACKGROUND.md
@@ -60,3 +60,5 @@ install:
 [licence]: LICENSE
 [rust]: https://www.rust-lang.org/
 [rws]: https://github.com/rcook/rws
+[status-project]: https://ci.appveyor.com/project/rcook/rust-appveyor-build-pack
+[status-master]: https://ci.appveyor.com/project/rcook/rust-appveyor-build-pack/branch/master
