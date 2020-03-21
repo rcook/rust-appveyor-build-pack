@@ -102,10 +102,8 @@ function main {
     Copy-Item -Path $versionPath -Destination $stagingDir
     Copy-Item -Path $executablePath -Destination $stagingDir
 
-    Compress-Archive `
-        -DestinationPath $distDir\$baseName.zip `
-        -CompressionLevel Optimal `
-        -Path $stagingDir
+    $zipPath = Join-Path -Path $distDir -ChildPath "$baseName.zip"
+    & 7z a $zipPath $stagingDir\*
 }
 
 Write-Output 'Build step'
