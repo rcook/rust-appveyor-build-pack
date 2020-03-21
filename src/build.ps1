@@ -78,6 +78,7 @@ function main {
     try {
         Invoke-ExternalCommand cargo build
         Invoke-ExternalCommand cargo build --release
+        $targetNames = (Invoke-ExternalCommand cargo read-manifest | ConvertFrom-Json).'targets'.'name'
     }
     finally {
         $env:PATH = $savedPath
@@ -96,11 +97,14 @@ function main {
     Write-Output $buildInfo.Version | Out-File -Encoding ascii -FilePath $distDir\version.txt
 
     $versionPath = Resolve-Path -Path $distDir\version.txt
-    $executablePath = Resolve-Path -Path "$targetDir\release\$(Get-ExecutableFileName -BaseName hello-world)"
     $stagingDir = Join-Path -Path $distDir -ChildPath $baseName
     New-Item -ErrorAction Ignore -ItemType Directory -Path $stagingDir | Out-Null
     Copy-Item -Path $versionPath -Destination $stagingDir
-    Copy-Item -Path $executablePath -Destination $stagingDir
+
+    $targetNames | ForEach-Object {
+        $targetPath = Resolve-Path -Path "$targetDir\release\$(Get-ExecutableFileName -BaseName $_)"
+        Copy-Item -Path $targetPath -Destination $stagingDir
+    }
 
     $zipPath = Join-Path -Path $distDir -ChildPath "$baseName.zip"
     if (Get-IsWindows) {
