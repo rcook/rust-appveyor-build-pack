@@ -103,7 +103,13 @@ function main {
     Copy-Item -Path $executablePath -Destination $stagingDir
 
     $zipPath = Join-Path -Path $distDir -ChildPath "$baseName.zip"
-    & 7z a $zipPath $stagingDir\*
+    if (Get-IsWindows) {
+        & 7z a $zipPath $stagingDir\*
+    } elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
+        & zip -j $zipPath $stagingDir\*
+    } else {
+        throw 'Unsupported platform'
+    }
 }
 
 Write-Output 'Build step'
