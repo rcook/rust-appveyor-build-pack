@@ -23,7 +23,7 @@ function main {
     param()
 
     $sourceDir = Resolve-Path -Path $PSScriptRoot\src
-    git describe --long --dirty --match='v[0-9]*' > $sourceDir\version.txt
+    git describe --long --dirty --match='v[0-9]*' | Out-File -Encoding ascii -FilePath $sourceDir\version.txt
     $zipPath = Join-Path -Path $PSScriptRoot -ChildPath rust-appveyor-build-pack.zip
     Compress-Archive `
         -Force `
