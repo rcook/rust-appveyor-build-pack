@@ -116,8 +116,6 @@ function main {
         $buildInfo = Get-LocalBuildInfo
     }
 
-    $baseName = "$($buildInfo.ProjectSlug)-$($buildInfo.Version.FullVersion)"
-
     fixUpCargoToml -BuildInfo $buildInfo
 
     $targetNames = buildCargoTargets
