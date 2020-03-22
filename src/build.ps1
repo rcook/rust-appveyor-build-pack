@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Build step.
+    rust-appveyor-build-pack build step.
 
 .DESCRIPTION
     Build step.
@@ -67,7 +67,7 @@ function buildCargoTargets {
     try {
         Invoke-ExternalCommand cargo build
         Invoke-ExternalCommand cargo build --release
-        $targetNames = (Invoke-ExternalCommand cargo read-manifest | ConvertFrom-Json).'targets'.'name'
+        $targetNames = (Invoke-ExternalCommand -Capture cargo read-manifest | ConvertFrom-Json).'targets'.'name'
     }
     finally {
         $env:PATH = $savedPath
@@ -122,8 +122,8 @@ function main {
 
     $dirInfo = createDirs
 
-    Write-Output $buildInfo | Out-File -Encoding ascii -FilePath "$($dirInfo.DistDir)\build.txt"
-    Write-Output $buildInfo.Version | Out-File -Encoding ascii -FilePath "$($dirInfo.DistDir)\version.txt"
+    Set-Content -Encoding ascii -Path "$($dirInfo.DistDir)\build.txt" -Value ($buildInfo | Out-String).Trim()
+    Set-Content -Encoding ascii -Path "$($dirInfo.DistDir)\version.txt" -Value ($buildInfo.Version | Out-String).Trim()
 
     Copy-Item `
         -Path "$($dirInfo.DistDir)\version.txt" `
@@ -134,14 +134,13 @@ function main {
     }
 
     $zipPath = Join-Path -Path $dirInfo.DistDir -ChildPath "$($buildInfo.ProjectSlug)-$($buildInfo.Version.PlatformId).zip"
-    $files = Get-ChildItem -Path $dirInfo.StagingDir
     if (Get-IsWindows) {
-        Compress-Archive `
+        Get-ChildItem -Path $dirInfo.StagingDir | Compress-Archive `
             -DestinationPath $zipPath `
-            -CompressionLevel Optimal `
-            -Path $files
+            -CompressionLevel Optimal
     }
     elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
+        $files = Get-ChildItem -Path $dirInfo.StagingDir
         & zip -j $zipPath $files
     }
     else {
@@ -149,5 +148,12 @@ function main {
     }
 }
 
-Write-Output 'Build step'
-main
+Write-Host -ForegroundColor Magenta 'Build step'
+try {
+    main
+    Write-Host -ForegroundColor Green 'Build step succeeded'
+}
+catch {
+    Write-Host -ForegroundColor Red 'Build step failed'
+    throw
+}

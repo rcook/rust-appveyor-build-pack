@@ -42,26 +42,60 @@ function Get-IsMacOS() {
 }
 Export-ModuleMember -Function Get-IsMacOS
 
-function Invoke-ExternalCommand {
-    param()
-
-    if ($args.Count -eq 0) {
-        throw 'Must supply some arguments'
-    }
-
-    $command = $Args[0]
-    $commandArgs = @()
-    if ($Args.Count -gt 1) {
-        $commandArgs = $Args[1..($Args.Count - 1)]
-    }
+function wrapCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [ScriptBlock] $ScriptBlock
+    )
 
     $savedErrorActionPreference = $ErrorActionPreference
-    $ErrorActionPreference = 'SilentlyContinue'
-    & $command $commandArgs
-    $result = $LastExitCode
-    $ErrorActionPreference = $savedErrorActionPreference
-    if ($result -ne 0) {
-        throw "$command $commandArgs failed with exit status $result"
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $ScriptBlock
+    }
+    finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+}
+
+function Invoke-ExternalCommand {
+    [CmdletBinding()]
+    param(
+        [switch] $Capture,
+        [Parameter(Mandatory = $true, Position = 0)]
+        [string] $Command,
+        [Parameter(Mandatory = $false, ValueFromRemainingArguments = $true, Position = 1)]
+        [string[]] $Remaining
+    )
+
+    wrapCommand -ScriptBlock {
+        if ($Capture) {
+            $output = $(& $Command $Remaining 2>&1)
+            $exitCode = $LastExitCode
+        }
+        else {
+            $output = $null
+            & $Command $Remaining 2>&1 | ForEach-Object {
+                $line = ([string]$_).TrimEnd()
+                if ($line.Length -gt 0) {
+                    Write-Host -ForegroundColor DarkYellow "> $line"
+                }
+            }
+            $exitCode = $LastExitCode
+        }
+
+        if ($exitCode -ne 0) {
+            if ($Remaining.Count -gt 0) {
+                throw "$command $Remaining failed with exit code $exitCode"
+            }
+            else {
+                throw "$command failed with exit code $exitCode"
+            }
+        }
+
+        if ($output -ne $null) {
+            $output
+        }
     }
 }
 Export-ModuleMember -Function Invoke-ExternalCommand
@@ -160,7 +194,7 @@ function Get-AppVeyorBuildInfo {
 
     $homePageUri = "https://github.com/$repoName"
     $releasesUri = "https://github.com/$repoName/releases/latest"
-    $gitDescription = $(Invoke-ExternalCommand git describe --long --dirty --match='v[0-9]*')
+    $gitDescription = Invoke-ExternalCommand -Capture git describe --long --dirty --match='v[0-9]*'
     $gitDescriptionParts = $gitDescription.Split('-')
     if ($gitDescriptionParts.Length -eq 3) {
         $version = $gitDescriptionParts[0]

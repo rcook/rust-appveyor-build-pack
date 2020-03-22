@@ -90,7 +90,7 @@ function main {
         default { throw "Unsupported build type $BuildType" }
     }
 
-    & $packDir\install.ps1
+    & $packDir\install.ps1 -NoRustupInit
     & $packDir\build.ps1
     & $packDir\test.ps1
 }

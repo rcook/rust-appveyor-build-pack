@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Install step.
+    rust-appveyor-build-pack install step.
 
 .DESCRIPTION
     Install step.
@@ -9,11 +9,10 @@
 
 [CmdletBinding()]
 param(
-    [switch] $Trace,
     [switch] $DumpEnv,
     [switch] $Detailed,
-    [switch] $RustupInit,
-    [switch] $Clean
+    [switch] $NoRustupInit,
+    [switch] $Trace
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,53 +33,56 @@ function dumpEnv {
     $thisDir = $PSScriptRoot
     $currentDir = Get-Location
 
-    Write-Output "isLinux: $(Get-IsLinux)"
-    Write-Output "isMacOS: $(Get-IsMacOS)"
-    Write-Output "isWindows: $(Get-IsWindows)"
-    Write-Output "executableFileName: $(Get-ExecutableFileName -BaseName base-name)"
-    Write-Output "thisDir: $thisDir"
-    Write-Output "currentDir: $currentDir"
+    $versionPath = Resolve-Path -Path $currentDir\rust-appveyor-build-pack\version.txt
+    Write-Host -Foreground Blue "rust-appveyor-build-pack version $(Get-Content -Path $versionPath)"
 
-    Write-Output 'Git tags:'
-    Invoke-ExternalCommand git tag | ForEach-Object {
-        Write-Output "  $_ $(Invoke-ExternalCommand git rev-list -n 1 $_)"
+    Write-Host "isLinux: $(Get-IsLinux)"
+    Write-Host "isMacOS: $(Get-IsMacOS)"
+    Write-Host "isWindows: $(Get-IsWindows)"
+    Write-Host "executableFileName: $(Get-ExecutableFileName -BaseName base-name)"
+    Write-Host "thisDir: $thisDir"
+    Write-Host "currentDir: $currentDir"
+
+    Write-Host 'Git tags:'
+    Invoke-ExternalCommand -Capture git tag | ForEach-Object {
+        Write-Host "  $_ $(Invoke-ExternalCommand -Capture git rev-list -n 1 $_)"
     }
 
-    Write-Output 'Git branches:'
-    Invoke-ExternalCommand git branch -vv -a --color=never | ForEach-Object {
-        Write-Output "  $_"
+    Write-Host 'Git branches:'
+    Invoke-ExternalCommand -Capture git branch -vv -a --color=never | ForEach-Object {
+        Write-Host "  $_"
     }
 
-    Write-Output 'Git describe:'
-    Write-Output "  $(Invoke-ExternalCommand git describe --long --dirty)"
+    Write-Host 'Git describe:'
+    Write-Host "  $(Invoke-ExternalCommand -Capture git describe --long --dirty)"
 
     if (Get-IsAppVeyorBuild) {
         $buildInfo = Get-AppVeyorBuildInfo
-        Write-Output $buildInfo
-        Write-Output $buildInfo.Version
+        Write-Host $buildInfo
+        Write-Host $buildInfo.Version
     }
 
     if ($Detailed) {
-        Write-Output 'Environment:'
+        Write-Host 'Environment:'
         Get-ChildItem -Path Env: | Sort-Object Key | ForEach-Object {
-            Write-Output "  $($_.Key) = $($_.Value)"
+            Write-Host "  $($_.Key) = $($_.Value)"
         }
 
-        Write-Output "Files under $($thisDir):"
+        Write-Host "Files under $($thisDir):"
         Get-ChildItem -Force -Recurse -Path $thisDir | Sort-Object FullName | ForEach-Object {
-            Write-Output "  $($_.FullName)"
+            Write-Host "  $($_.FullName)"
         }
 
         if ($thisDir -ne $currentDir) {
-            Write-Output "Files under $($currentDir):"
+            Write-Host "Files under $($currentDir):"
             Get-ChildItem -Force -Recurse -Path $currentDir | Sort-Object FullName | ForEach-Object {
-                Write-Output "  $($_.FullName)"
+                Write-Host "  $($_.FullName)"
             }
         }
 
-        Write-Output 'Git log:'
-        Invoke-ExternalCommand git log --oneline --color=never | ForEach-Object {
-            Write-Output "  $_"
+        Write-Host 'Git log:'
+        Invoke-ExternalCommand -Capture git log --oneline --color=never | ForEach-Object {
+            Write-Host "  $_"
         }
     }
 }
@@ -93,21 +95,14 @@ function main {
         [Parameter(Mandatory = $true)]
         [bool] $Detailed,
         [Parameter(Mandatory = $true)]
-        [bool] $RustupInit,
-        [Parameter(Mandatory = $true)]
-        [bool] $Clean
+        [bool] $NoRustupInit
     )
-
-    if ($Clean) {
-        Invoke-ExternalCommand git checkout -- .
-        Invoke-ExternalCommand git clean -fxd
-    }
 
     if ($DumpEnv) {
         dumpEnv -Detailed $Detailed
     }
 
-    if ($RustupInit) {
+    if (-not $NoRustupInit) {
         $rustChannel = 'nightly'
 
         if (Get-IsWindows) {
@@ -161,9 +156,15 @@ function main {
     }
 }
 
-Write-Output 'Install step'
-main `
-    -DumpEnv $DumpEnv `
-    -Detailed $Detailed `
-    -RustupInit $RustupInit `
-    -Clean $Clean
+Write-Host -ForegroundColor Magenta 'Install step'
+try {
+    main `
+        -DumpEnv $DumpEnv `
+        -Detailed $Detailed `
+        -NoRustupInit $NoRustupInit
+    Write-Host -ForegroundColor Green 'Install step succeeded'
+}
+catch {
+    Write-Host -ForegroundColor Red 'Installed step failed'
+    throw
+}
