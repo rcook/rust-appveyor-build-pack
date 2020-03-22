@@ -99,8 +99,8 @@ function createDirs {
     New-Item -ErrorAction Ignore -ItemType Directory -Path $stagingDir | Out-Null
 
     [DirInfo] @{
-        TargetDir = $targetDir
-        DistDir = $distDir
+        TargetDir  = $targetDir
+        DistDir    = $distDir
         StagingDir = $stagingDir
     }
 }
@@ -135,10 +135,13 @@ function main {
         Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
     }
 
-    $zipPath = Join-Path -Path $dirInfo.DistDir -ChildPath "$($buildInfo.ProjectSlug).zip"
+    $zipPath = Join-Path -Path $dirInfo.DistDir -ChildPath "$($buildInfo.ProjectSlug)-$($buildInfo.Version.PlatformId).zip"
     $files = Get-ChildItem -Path $dirInfo.StagingDir
     if (Get-IsWindows) {
-        & 7z a $zipPath $files
+        Compress-Archive `
+            -DestinationPath $zipPath `
+            -CompressionLevel Optimal `
+            -Path $files
     }
     elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
         & zip -j $zipPath $files

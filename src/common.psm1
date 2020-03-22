@@ -247,7 +247,7 @@ function Get-LocalBuildInfo {
         ReleasesUri    = '(releases-uri)'
         GitDescription = '(git-description)'
         IsDirty        = $false
-        PlatformId     = '(platform-id)'
+        PlatformId     = getPlatformId
         Version        = '(version)'
         CommitOffset   = 0
         CommitHash     = '(commit-hash)'

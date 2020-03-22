@@ -19,7 +19,7 @@ It turns out that PowerShell is the most generally available and consistent scri
 
 * [PowerShell Core][powershell-core]
 * [Git][git]
-* [7-Zip][7zip] on Windows and [Info-ZIP][info-zip] on Linux and macOS
+* [Info-ZIP][info-zip] on Linux and macOS
 
 With these tools installed locally, you can fairly faithfully simulate an AppVeyor CI/CD environment for development and testing. Here are instructions for building [locally][run-build] with rust-appveyor-build-pack.
 
@@ -88,7 +88,6 @@ Triggered when _branches_ are pushed to GitHub
 
 Note that pushing a tag will often trigger _both_ a tag build _and_ branch build if the commits are new to GitHub and also on a branch (which they will be usually). This will be the case if you use the [exmaple `appveyor.yml` configuration][appveyor-yml-example].
 
-[7zip]: https://www.7-zip.org/
 [appveyor]: https://appveyor.com/
 [appveyor-yml-example]: appveyor.yml.example
 [git]: https://git-scm.com/
