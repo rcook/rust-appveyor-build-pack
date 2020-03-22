@@ -57,6 +57,54 @@ function fixUpCargoToml {
     $content | Out-File -Encoding ascii -FilePath $cargoTomlPath -NoNewline
 }
 
+function buildCargoTargets {
+    [OutputType([string[]])]
+    param()
+
+    $cargoBinDir = Resolve-Path -Path "$(Get-HomeDir)\.cargo\bin"
+    $savedPath = $env:PATH
+    $env:PATH = $env:PATH + [System.IO.Path]::PathSeparator + $cargoBinDir
+    try {
+        Invoke-ExternalCommand cargo build
+        Invoke-ExternalCommand cargo build --release
+        $targetNames = (Invoke-ExternalCommand cargo read-manifest | ConvertFrom-Json).'targets'.'name'
+    }
+    finally {
+        $env:PATH = $savedPath
+    }
+
+    $targetNames
+}
+
+class DirInfo {
+    [object] $TargetDir
+    [object] $DistDir
+    [object] $StagingDir
+}
+
+function createDirs {
+    $targetDir = Resolve-Path -Path "$($buildInfo.BuildDir)\target"
+
+    $distDir = Join-Path -Path $targetDir -ChildPath dist
+    if (Test-Path -Path $distDir) {
+        Remove-Item -Force -Recurse -Path $distDir
+    }
+    New-Item -ErrorAction Ignore -ItemType Directory -Path $distDir | Out-Null
+    $distDir = Resolve-Path -Path $distDir
+
+    $stagingDir = Join-Path -Path $targetDir -ChildPath staging
+    if (Test-Path -Path $stagingDir) {
+        Remove-Item -Force -Recurse -Path $stagingDir
+    }
+    New-Item -ErrorAction Ignore -ItemType Directory -Path $stagingDir | Out-Null
+
+    [DirInfo] @{
+        TargetDir = $targetDir
+        DistDir = $distDir
+        StagingDir = $stagingDir
+    }
+}
+
 function main {
     [OutputType([void])]
     param()
@@ -72,46 +120,28 @@ function main {
 
     fixUpCargoToml -BuildInfo $buildInfo
 
-    $cargoBinDir = Resolve-Path -Path "$(Get-HomeDir)\.cargo\bin"
-    $savedPath = $env:PATH
-    $env:PATH = $env:PATH + [System.IO.Path]::PathSeparator + $cargoBinDir
-    try {
-        Invoke-ExternalCommand cargo build
-        Invoke-ExternalCommand cargo build --release
-        $targetNames = (Invoke-ExternalCommand cargo read-manifest | ConvertFrom-Json).'targets'.'name'
-    }
-    finally {
-        $env:PATH = $savedPath
-    }
+    $targetNames = buildCargoTargets
 
-    $targetDir = Resolve-Path -Path "$($buildInfo.BuildDir)\target"
+    $dirInfo = createDirs
 
-    $distDir = Join-Path -Path $targetDir -ChildPath dist
-    if (Test-Path -Path $distDir) {
-        Remove-Item -Force -Recurse -Path $distDir
-    }
-    New-Item -ErrorAction Ignore -ItemType Directory -Path $distDir | Out-Null
-    $distDir = Resolve-Path -Path $distDir
+    Write-Output $buildInfo | Out-File -Encoding ascii -FilePath "$($dirInfo.DistDir)\build.txt"
+    Write-Output $buildInfo.Version | Out-File -Encoding ascii -FilePath "$($dirInfo.DistDir)\version.txt"
 
-    Write-Output $buildInfo | Out-File -Encoding ascii -FilePath $distDir\build.txt
-    Write-Output $buildInfo.Version | Out-File -Encoding ascii -FilePath $distDir\version.txt
-
-    $versionPath = Resolve-Path -Path $distDir\version.txt
-    $stagingDir = Join-Path -Path $distDir -ChildPath $baseName
-    New-Item -ErrorAction Ignore -ItemType Directory -Path $stagingDir | Out-Null
-
-    Copy-Item -Path $versionPath -Destination $stagingDir\$baseName.txt
+    Copy-Item `
+        -Path "$($dirInfo.DistDir)\version.txt" `
+        -Destination "$($dirInfo.StagingDir)\$($buildInfo.ProjectSlug).txt"
     $targetNames | ForEach-Object {
-        $targetPath = Resolve-Path -Path "$targetDir\release\$(Get-ExecutableFileName -BaseName $_)"
-        Copy-Item -Path $targetPath -Destination $stagingDir
+        $targetPath = Resolve-Path -Path "$($dirInfo.TargetDir)\release\$(Get-ExecutableFileName -BaseName $_)"
+        Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
     }
 
-    $zipPath = Join-Path -Path $distDir -ChildPath "$baseName.zip"
+    $zipPath = Join-Path -Path $dirInfo.DistDir -ChildPath "$($buildInfo.ProjectSlug).zip"
+    $files = Get-ChildItem -Path $dirInfo.StagingDir
     if (Get-IsWindows) {
-        & 7z a $zipPath $stagingDir\*
+        & 7z a $zipPath $files
     }
     elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
-        & zip -j $zipPath $stagingDir\*
+        & zip -j $zipPath $files
     }
     else {
         throw 'Unsupported platform'
