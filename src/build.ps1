@@ -99,8 +99,8 @@ function main {
     $versionPath = Resolve-Path -Path $distDir\version.txt
     $stagingDir = Join-Path -Path $distDir -ChildPath $baseName
     New-Item -ErrorAction Ignore -ItemType Directory -Path $stagingDir | Out-Null
-    Copy-Item -Path $versionPath -Destination $stagingDir
 
+    Copy-Item -Path $versionPath -Destination $stagingDir\$baseName.txt
     $targetNames | ForEach-Object {
         $targetPath = Resolve-Path -Path "$targetDir\release\$(Get-ExecutableFileName -BaseName $_)"
         Copy-Item -Path $targetPath -Destination $stagingDir
@@ -109,9 +109,11 @@ function main {
     $zipPath = Join-Path -Path $distDir -ChildPath "$baseName.zip"
     if (Get-IsWindows) {
         & 7z a $zipPath $stagingDir\*
-    } elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
+    }
+    elseif ((Get-IsLinux) -or (Get-IsMacOS)) {
         & zip -j $zipPath $stagingDir\*
-    } else {
+    }
+    else {
         throw 'Unsupported platform'
     }
 }

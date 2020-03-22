@@ -21,7 +21,7 @@ It turns out that PowerShell is the most generally available and consistent scri
 * [Git][git]
 * [7-Zip][7zip] on Windows and [Info-ZIP][info-zip] on Linux and macOS
 
-With these tools installed locally, you can fairly faithfully simulate an AppVeyor CI/CD environment for development and testing.
+With these tools installed locally, you can fairly faithfully simulate an AppVeyor CI/CD environment for development and testing. Here are instructions for building [locally][run-build] with rust-appveyor-build-pack.
 
 ## AppVeyor environment
 
@@ -97,3 +97,4 @@ Note that pushing a tag will often trigger _both_ a tag build _and_ branch build
 [gitlab]: https://gitlab.com/
 [info-zip]: http://infozip.sourceforge.net/
 [powershell-core]: https://github.com/PowerShell/PowerShell
+[run-build]: RUN_BUILD.md
