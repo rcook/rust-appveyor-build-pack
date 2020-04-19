@@ -129,8 +129,15 @@ function main {
         -Path "$($dirInfo.DistDir)\version.txt" `
         -Destination "$($dirInfo.StagingDir)\$($buildInfo.ProjectSlug).txt"
     $targetNames | ForEach-Object {
-        $targetPath = Resolve-Path -Path "$($dirInfo.TargetDir)\release\$(Get-ExecutableFileName -BaseName $_)"
-        Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
+        $targetPath = Resolve-Path -ErrorAction Ignore -Path "$($dirInfo.TargetDir)\release\$(Get-ExecutableFileName -BaseName $_)"
+        if ($null -eq $targetPath) {
+            Write-Host "No executable found for target $_"
+            Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
+        }
+        else {
+            Write-Host "Found executable $targetPath found for target $_"
+            Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
+        }
     }
 
     $zipPath = Join-Path -Path $dirInfo.DistDir -ChildPath "$($buildInfo.ProjectSlug)-$($buildInfo.Version.PlatformId).zip"
