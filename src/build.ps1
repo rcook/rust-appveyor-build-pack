@@ -132,7 +132,6 @@ function main {
         $targetPath = Resolve-Path -ErrorAction Ignore -Path "$($dirInfo.TargetDir)\release\$(Get-ExecutableFileName -BaseName $_)"
         if ($null -eq $targetPath) {
             Write-Host "No executable found for target $_"
-            Copy-Item -Path $targetPath -Destination $dirInfo.StagingDir
         }
         else {
             Write-Host "Found executable $targetPath found for target $_"
