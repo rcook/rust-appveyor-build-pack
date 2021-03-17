@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+this_dir=$(cd $(dirname $0); pwd -P)
+
+cd $this_dir/..
+
+if [ $# != 1 ]; then
+  echo Specify release tag
+  exit 1
+fi
+
+git tag -a $1 -m $1
