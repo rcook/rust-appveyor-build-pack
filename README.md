@@ -43,6 +43,8 @@ install:
   A real project that uses this build pack.
 * [ciprobe][ciprobe] \
   A GitHub template repository you can clone to get started.
+* [Tagger][tagger] \
+  My tagging tool.
 
 ## Licence
 
@@ -62,3 +64,4 @@ install:
 [rws]: https://github.com/rcook/rws
 [status-project]: https://ci.appveyor.com/project/rcook/rust-appveyor-build-pack
 [status-master]: https://ci.appveyor.com/project/rcook/rust-appveyor-build-pack/branch/master
+[tagger]: https://github.com/rcook/tagger
