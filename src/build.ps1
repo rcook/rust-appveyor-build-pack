@@ -51,10 +51,15 @@ function fixUpCargoToml {
     }
 
     $cargoTomlPath = Resolve-Path -Path "$($BuildInfo.BuildDir)\Cargo.toml"
-    $content = Get-Content -Path $cargoTomlPath -Raw
-    $content = $content -replace 'version = ".+"', "version = `"$cargoVersion`""
-    $content = $content -replace 'description = ".+"', "description = `"$($BuildInfo.Version.FullVersion)`""
-    $content | Out-File -Encoding ascii -FilePath $cargoTomlPath -NoNewline
+
+    $lines = [string[]] (Get-Content -Path $cargoTomlPath)
+    for ($i = 0; $i -lt $lines.Length; ++$i) {
+        $lines[$i] = $lines[$i] -replace '^version = ".+"', "version = `"$cargoVersion`""
+        $lines[$i] = $lines[$i] -replace '^description = ".+"', "description = `"$($BuildInfo.Version.FullVersion)`""
+    }
+
+    $content = $lines -join "`n"
+    $content | Out-File -Encoding ascii -FilePath $cargoTomlPath
 }
 
 function buildCargoTargets {
